@@ -41,11 +41,14 @@ WHERE FirstName IS NULL
    OR NULLIF(LTRIM(RTRIM(LastName)), N'') IS NULL
    OR (MiddleName IS NOT NULL AND LTRIM(RTRIM(MiddleName)) = N'')
    OR (FirstName IS NOT NULL AND
-       (LTRIM(RTRIM(FirstName)) <> FirstName OR FirstName LIKE N'%  %'))
+       (DATALENGTH(LTRIM(RTRIM(FirstName))) <> DATALENGTH(FirstName)
+        OR FirstName LIKE N'%  %'))
    OR (MiddleName IS NOT NULL AND
-       (LTRIM(RTRIM(MiddleName)) <> MiddleName OR MiddleName LIKE N'%  %'))
+       (DATALENGTH(LTRIM(RTRIM(MiddleName))) <> DATALENGTH(MiddleName)
+        OR MiddleName LIKE N'%  %'))
    OR (LastName IS NOT NULL AND
-       (LTRIM(RTRIM(LastName)) <> LastName OR LastName LIKE N'%  %'))
+       (DATALENGTH(LTRIM(RTRIM(LastName))) <> DATALENGTH(LastName)
+        OR LastName LIKE N'%  %'))
    OR (LEN(FirstName) > 1 AND
        (FirstName COLLATE Latin1_General_100_BIN2 = UPPER(FirstName) COLLATE Latin1_General_100_BIN2
         OR FirstName COLLATE Latin1_General_100_BIN2 = LOWER(FirstName) COLLATE Latin1_General_100_BIN2))

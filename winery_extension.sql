@@ -17,19 +17,25 @@ AS
 GO
 
 -- Average lifetime spend and order count by tier.
+WITH TierList AS
+(
+    SELECT CustomerTier, SortOrder
+    FROM (VALUES
+        (N'Gold', 1),
+        (N'Silver', 2),
+        (N'Bronze', 3)
+    ) AS tiers(CustomerTier, SortOrder)
+)
 SELECT
-    CustomerTier,
-    COUNT(*) AS CustomerCount,
-    AVG(CONVERT(decimal(19, 2), TotalSales)) AS AverageRevenue,
-    AVG(CONVERT(decimal(19, 2), OrderCount)) AS AverageOrderCount
-FROM Sales.vCustomerTier
-GROUP BY CustomerTier
-ORDER BY
-    CASE CustomerTier
-        WHEN N'Gold' THEN 1
-        WHEN N'Silver' THEN 2
-        ELSE 3
-    END;
+    tiers.CustomerTier,
+    COUNT(customers.CustomerID) AS CustomerCount,
+    AVG(CONVERT(decimal(19, 2), customers.TotalSales)) AS AverageRevenue,
+    AVG(CONVERT(decimal(19, 2), customers.OrderCount)) AS AverageOrderCount
+FROM TierList AS tiers
+LEFT JOIN Sales.vCustomerTier AS customers
+    ON customers.CustomerTier = tiers.CustomerTier
+GROUP BY tiers.CustomerTier, tiers.SortOrder
+ORDER BY tiers.SortOrder;
 GO
 
 -- Annualized lifetime spend by tier. Tenure is measured from each customer's
