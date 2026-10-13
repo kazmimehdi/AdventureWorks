@@ -16,7 +16,14 @@ AS
     FROM Sales.vCustomerOrderAggregate;
 GO
 
--- Average lifetime spend and order count by tier.
+-- Counts include every customer in the view. Averages exclude customers
+-- without orders so zero-order Bronze customers do not depress the metrics.
+DECLARE @AsOfDate date =
+(
+    SELECT CONVERT(date, MAX(OrderDate))
+    FROM Sales.SalesOrderHeader
+);
+
 WITH TierList AS
 (
     SELECT CustomerTier, SortOrder
@@ -29,22 +36,27 @@ WITH TierList AS
 SELECT
     tiers.CustomerTier,
     COUNT(customers.CustomerID) AS CustomerCount,
-    AVG(CONVERT(decimal(19, 2), customers.TotalSales)) AS AverageRevenue,
-    AVG(CONVERT(decimal(19, 2), customers.OrderCount)) AS AverageOrderCount
+    COUNT(CASE WHEN customers.OrderCount > 0 THEN 1 END) AS PurchasingCustomerCount,
+    AVG(CASE WHEN customers.OrderCount > 0
+        THEN CONVERT(decimal(19, 2), customers.TotalSales)
+    END) AS AverageRevenuePerPurchasingCustomer,
+    AVG(CASE WHEN customers.OrderCount > 0
+        THEN CONVERT(decimal(19, 2), customers.OrderCount)
+    END) AS AverageOrderCountPerPurchasingCustomer
 FROM TierList AS tiers
 LEFT JOIN Sales.vCustomerTier AS customers
     ON customers.CustomerTier = tiers.CustomerTier
 GROUP BY tiers.CustomerTier, tiers.SortOrder
 ORDER BY tiers.SortOrder;
-GO
 
--- Annualized lifetime spend by tier. Tenure is measured from each customer's
--- first recorded order through today; same-day first orders have no rate yet.
+-- Use the dataset's latest order as its as-of date to avoid aging this static
+-- sample beyond its last observed transaction. For live winery data, set
+-- @AsOfDate to the current date instead.
 WITH CustomerTenure AS
 (
     SELECT
         CustomerID,
-        DATEDIFF(day, MIN(OrderDate), CONVERT(date, GETDATE())) / 365.25 AS TenureYears
+        DATEDIFF(day, MIN(OrderDate), @AsOfDate) / 365.25 AS TenureYears
     FROM Sales.SalesOrderHeader
     GROUP BY CustomerID
 ),
