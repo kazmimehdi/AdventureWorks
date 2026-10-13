@@ -7,6 +7,14 @@ and client-handover skills needed for a winery project, using Microsoft's
 AdventureWorks sample database. Its sales figures and customer records are
 sample data, not winery data.
 
+## What this project is (and is not)
+
+This project uses AdventureWorks as a sample sales and customer database for a winery-style segmentation exercise. The spend tiers (Gold / Silver / Bronze) are not real winery membership levels; they are thresholds built from lifetime sales in `Sales.vCustomerTier` so the method can be demonstrated end to end using AdventureWorks data.
+
+The sample plays the role of a winery customer base only for method development. It does not contain wine-club membership records, consent tables, or real customer-tier assignments. In a real winery implementation, those membership levels would be joined through a crosswalk and compared by revenue, order frequency, repeat-purchase rate, and retention.
+
+This project also includes data-quality review logic and lifecycle email drafts. Those are intentionally read-only review artifacts and should be treated as client-review input rather than automated data changes.
+
 ## Install and run
 
 1. Install SQL Server Developer Edition (for learning and non-production use)
@@ -55,21 +63,13 @@ If you are new to SQL, complete the
 
 ## Findings
 
-The SQL analysis reports all customers per spend-based tier, separately
-counts those with orders, and calculates average revenue/order count using
-only customers with at least one order. Zero-order customers remain in the
-view and in tier distribution counts; they are excluded from those averages.
-Because they have zero spend, they are classified Bronze.
+This project is a method demonstration using AdventureWorks 2022, not a winery membership analysis. The sample database has no wine-club membership data, and the Gold / Silver / Bronze tiers in `Sales.vCustomerTier` are spend thresholds derived from lifetime `TotalDue` values ($10,000+, $2,500+, and below) to make the segmentation method testable end to end.
 
-The restored AdventureWorks database is not available in this environment, so
-the data query could not be run here and actual tier counts/averages are not
-reported rather than guessed. Restore the sample and execute
-`winery_extension.sql`; its first result set provides the real distribution
-and averages for that backup.
+The real data coverage in the sample is the historical AdventureWorks order history. The as-of date in the SQL logic defaults to the latest order date in `Sales.SalesOrderHeader`, so the analysis is anchored to the last observed transaction in the dataset rather than to the current date. The `winery_extension.sql` logic intentionally measures tenure from that sample as-of date to avoid aging a historical database beyond its last observed order.
 
-This is a **method demo**, not a conclusion that higher spend defines better
-membership. The winery should group customers by their actual membership
-level and compare revenue, order frequency, and retention across levels.
+The project is designed to demonstrate customer comparison using order frequency, repeat-purchase rate, and retention instead of average spend, because spend is part of the tier definition and would create a circular metric. In a winery environment, the same method applies to actual membership levels: replace the spend-tier expression with a join to `CustomerCrosswalk` and the membership table, then compare revenue, order frequency, and retention by tier.
+
+The restored AdventureWorks database is not available in this environment, so the actual query counts and averages are intentionally not reported here rather than guessed. To reproduce the results, restore `AdventureWorks2022.bak`, run `AdventureWorks.sql`, then execute `winery_extension.sql` and `data_quality_checks.sql` in SSMS.
 
 ## Example output
 
