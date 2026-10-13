@@ -1,4 +1,4 @@
-# AdventureWorks SQL exercises
+# FunDB SQL exercises
 
 ## Purpose
 
